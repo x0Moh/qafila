@@ -154,3 +154,51 @@ details.history summary { cursor: pointer; font-weight: 700; padding: 10px 0; }
 
 .sheet { position: fixed; inset: 0; background: #1a1613cc; display: flex; align-items: flex-end; justify-content: center; z-index: 5; }
 .sheet > div { width: 100%; max-width: 480px; padding: 16px 18px calc(24px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; }
+
+/* ---------- layout: phone first, then wide screens ---------- */
+.screen { display: flex; flex-direction: column; gap: 18px; }
+.screen > div:empty { display: none; }
+.pitch { display: none; }
+.tagline { margin-top: -6px; }
+
+@media (hover: hover) {
+  .btn:not(:disabled):hover { filter: brightness(1.12); }
+  .pick button:hover, .quest button:hover { border-color: var(--ink); }
+  .vote button:hover { filter: brightness(0.97); }
+  .link:hover { color: var(--ink); }
+}
+
+@media (min-width: 900px) {
+  #app { max-width: 1120px; padding: 28px 40px 40px; }
+  .a-top { grid-area: top; } .a-code { grid-area: code; } .a-players { grid-area: players; }
+  .a-roles { grid-area: roles; } .a-start { grid-area: start; }
+  .a-route { grid-area: route; } .a-event { grid-area: event; } .a-panel { grid-area: panel; }
+  .a-hist { grid-area: hist; } .a-abort { grid-area: abort; }
+  .a-win { grid-area: win; } .a-target { grid-area: target; } .a-reveal { grid-area: reveal; } .a-again { grid-area: again; }
+
+  .screen.home { display: grid; grid-template-columns: 1.15fr 1fr; gap: 64px; align-items: center; min-height: calc(100dvh - 80px); }
+  .screen.home .hero { align-items: flex-start; text-align: right; }
+  .screen.home .logo .word { font-size: 150px; }
+  .screen.home .tagline { font-size: 26px; }
+  .screen.home .pitch { display: block; font-size: 18px; line-height: 1.9; max-width: 460px; }
+
+  .screen.lobby { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 32px; align-items: start;
+    grid-template-areas: "top top" "code roles" "players roles" "players start"; }
+  .screen.lobby .players { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+  .screen.play { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 32px; align-items: start;
+    grid-template-areas: "top top" "route panel" "event panel" "hist panel" "abort panel"; }
+  .screen.play .a-panel { position: sticky; top: 24px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
+  .screen.play .a-panel .card { box-shadow: none; }
+  .vote button { min-height: 140px; }
+  .quest button { min-height: 220px; }
+  .pick { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+  .screen.end { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 32px; align-items: start;
+    grid-template-areas: "top top" "win reveal" "target reveal" "route reveal" "again hist"; }
+
+  .screen.night { max-width: 480px; width: 100%; margin: 0 auto; }
+
+  .sheet { align-items: center; }
+  .sheet > div { max-width: 440px; }
+}

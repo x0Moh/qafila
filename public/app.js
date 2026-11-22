@@ -68,9 +68,13 @@
   // ---------- screens ----------
   function homeView() {
     const code = new URLSearchParams(location.search).get('r') || '';
-    return `
-      <div class="center" style="margin-top:24px">${logo()}</div>
-      <p class="center muted" style="margin-top:-6px">واحد منكم مو منكم.</p>
+    return `<div class="screen home">
+      <div class="hero stack center">
+        <div style="margin-top:24px">${logo()}</div>
+        <p class="muted tagline">واحد منكم مو منكم.</p>
+        <p class="pitch muted">لعبة خداع جماعية تلعبونها وأنتم جالسين مع بعض. قافلة تقطع الصحراء بالليل، وبين المسافرين غزاة متنكرين. اكشفوهم قبل لا تفشل الرحلة.</p>
+      </div>
+      <div class="stack">
       <form class="stack card" data-form="join" autocomplete="off">
         <label for="name">اسمك</label>
         <input id="name" name="name" type="text" maxlength="18" placeholder="مثلًا: مشاري" value="${esc(store.name)}" required>
@@ -79,7 +83,8 @@
         <button class="btn" type="submit">ادخل القافلة</button>
         <button class="btn ghost" type="button" data-act="create">أنشئ غرفة جديدة</button>
       </form>
-      <p class="center muted small">بدون تسجيل · من ٥ إلى ١٠ لاعبين · العبوها وأنتم جالسين مع بعض</p>`;
+      <p class="center muted small">بدون تسجيل · من ٥ إلى ١٠ لاعبين · العبوها وأنتم جالسين مع بعض</p>
+      </div></div>`;
   }
 
   function lobbyView() {
@@ -97,29 +102,30 @@
         <span><span class="t">${title}</span><br><span class="d">${desc}</span></span></label>`;
     };
     const ready = n >= r.min;
-    return `
-      <div class="topbar">${logo(true)}<button class="link" data-act="leave">اطلع</button></div>
-      <div class="card stack center">
+    return `<div class="screen lobby">
+      <div class="topbar a-top">${logo(true)}<button class="link" data-act="leave">اطلع</button></div>
+      <div class="card stack center a-code">
         <span class="muted small">كود الغرفة</span>
         <div class="roomcode">${esc(r.code)}</div>
         <button class="btn ghost" data-act="share">شارك رابط الغرفة</button>
       </div>
-      <div class="stack">
+      <div class="stack a-players">
         <div class="row spread"><h2 style="font-size:18px">المسافرين</h2><span class="muted small">${num(n)} من ${num(r.max)}</span></div>
         <ul class="players">
           ${r.players.map(p => `<li class="${p.connected ? '' : 'off'}"><span>${esc(p.name)}${p.id === r.me ? ' (أنت)' : ''}</span>${p.id === r.hostId ? '<span class="tag">المضيف</span>' : ''}</li>`).join('')}
         </ul>
       </div>
-      <div class="card">
+      <div class="card a-roles">
         <h2 style="font-size:18px;margin-bottom:6px">الشخصيات</h2>
         <p class="small muted" style="margin-bottom:6px">الأحنف ووحشي موجودين دايم. ${r.isHost ? 'اختر الإضافات:' : 'المضيف يختار الإضافات.'}</p>
         ${opt('farisLulua', 'فارس ولؤلؤة', 'فارس يشوف الأحنف ولؤلؤة بدون ما يعرف مين مين. ينصح فيهم بعد أول قيم.')}
         ${opt('alqami', 'العلقمي', 'قائد الغزاة، والأحنف ما يشوفه. يناسب ٧ لاعبين وفوق.')}
         ${opt('shamhoroush', 'شمهروش', 'غازي ضايع ما يعرف جماعته. يناسب ١٠ لاعبين.')}
       </div>
-      ${r.isHost
+      <div class="a-start">${r.isHost
         ? `<button class="btn" data-act="start" ${ready ? '' : 'disabled'}>${ready ? 'ابدأ الرحلة' : `تحتاجون ${num(r.min - n)} لاعبين بعد`}</button>`
-        : `<p class="center muted">بانتظار المضيف يبدأ الرحلة…</p>`}`;
+        : `<p class="center muted">بانتظار المضيف يبدأ الرحلة…</p>`}</div>
+    </div>`;
   }
 
   function roleCard(g) {
@@ -140,17 +146,17 @@
     const me = g.players.find(p => p.id === g.me);
     const readyCount = g.players.filter(p => p.ready).length;
     if (me && me.ready) {
-      return `<div class="topbar">${logo(true)}<span class="muted small">الليل</span></div>
+      return `<div class="screen night"><div class="topbar">${logo(true)}<span class="muted small">الليل</span></div>
         <div class="cover"><span class="display">نامت القافلة…</span><span>بانتظار الباقين يشوفون أدوارهم</span>
         <div class="progress">${g.players.map(p => `<i class="${p.ready ? 'on' : ''}"></i>`).join('')}</div>
-        <span class="small">${num(readyCount)} من ${num(g.players.length)}</span></div>`;
+        <span class="small">${num(readyCount)} من ${num(g.players.length)}</span></div></div>`;
     }
-    return `
+    return `<div class="screen night">
       <div class="topbar">${logo(true)}<span class="muted small">الليل · غرفة ${esc(state.room.code)}</span></div>
       <p class="center">غطِّ جوالك عن اللي جنبك، وشوف دورك.</p>
       ${ui.revealed
         ? roleCard(g) + `<button class="btn" data-act="ready">حفظت دوري، أخفه</button>`
-        : `<button class="cover" data-act="reveal"><span class="display">نامت القافلة…</span><span>اضغط عشان تكشف دورك</span></button>`}`;
+        : `<button class="cover" data-act="reveal"><span class="display">نامت القافلة…</span><span>اضغط عشان تكشف دورك</span></button>`}</div>`;
   }
 
   function routeBoard(g) {
@@ -243,27 +249,29 @@
   }
 
   function playView(g) {
-    return `
-      <div class="topbar">${logo(true)}<button class="peek" data-act="peek">دوري</button></div>
-      ${routeBoard(g)}
-      ${lastEvent(g)}
-      ${phasePanel(g)}
-      ${historyView(g)}
-      ${state.room.isHost ? `<button class="link" data-act="abort">${ui.confirmAbort ? 'متأكد؟ اضغط مرة ثانية وترجعون للانتظار' : 'إنهاء اللعبة (للمضيف)'}</button>` : ''}
+    return `<div class="screen play">
+      <div class="topbar a-top">${logo(true)}<button class="peek" data-act="peek">دوري</button></div>
+      <div class="a-route">${routeBoard(g)}</div>
+      <div class="a-event">${lastEvent(g)}</div>
+      <div class="a-panel stack">${phasePanel(g)}</div>
+      <div class="a-hist">${historyView(g)}</div>
+      ${state.room.isHost ? `<div class="a-abort center"><button class="link" data-act="abort">${ui.confirmAbort ? 'متأكد؟ اضغط مرة ثانية وترجعون للانتظار' : 'إنهاء اللعبة (للمضيف)'}</button></div>` : ''}
+      </div>
       ${ui.peek ? `<div class="sheet" data-act="peek"><div>${roleCard(g)}<button class="btn" data-act="peek">أخفِ</button></div></div>` : ''}`;
   }
 
   function endView(g) {
     const win = g.winner;
-    return `
-      <div class="topbar">${logo(true)}<span class="muted small">الصباح</span></div>
-      <div class="winner ${win}"><span class="small">${esc(g.reason)}</span><span class="display">${win === 'caravan' ? 'وصلت القافلة!' : 'فاز الغزاة!'}</span></div>
-      ${g.assassinTarget ? `<div class="banner info">وحشي اختار ${esc(nameOf(g.assassinTarget))}.</div>` : ''}
-      ${routeBoard(g)}
-      <div class="stack"><h2 style="font-size:18px">انكشف كل شي</h2>
+    return `<div class="screen end">
+      <div class="topbar a-top">${logo(true)}<span class="muted small">الصباح</span></div>
+      <div class="winner a-win ${win}"><span class="small">${esc(g.reason)}</span><span class="display">${win === 'caravan' ? 'وصلت القافلة!' : 'فاز الغزاة!'}</span></div>
+      ${g.assassinTarget ? `<div class="banner info a-target">وحشي اختار ${esc(nameOf(g.assassinTarget))}.</div>` : ''}
+      <div class="a-route">${routeBoard(g)}</div>
+      <div class="stack a-reveal"><h2 style="font-size:18px">انكشف كل شي</h2>
         <ul class="reveal">${g.reveal.map(r => `<li class="${r.role.team}"><span>${esc(nameOf(r.id))}${r.id === g.me ? ' (أنت)' : ''}</span><span class="r">${esc(r.role.name)}</span></li>`).join('')}</ul></div>
-      ${historyView(g).replace('<details class="history">', '<details class="history" open>')}
-      ${state.room.isHost ? `<button class="btn" data-act="again">جولة جديدة</button>` : `<p class="center muted">بانتظار المضيف يبدأ جولة جديدة…</p>`}`;
+      <div class="a-hist">${historyView(g).replace('<details class="history">', '<details class="history" open>')}</div>
+      <div class="a-again">${state.room.isHost ? `<button class="btn" data-act="again">جولة جديدة</button>` : `<p class="center muted">بانتظار المضيف يبدأ جولة جديدة…</p>`}</div>
+    </div>`;
   }
 
   // ---------- render ----------
