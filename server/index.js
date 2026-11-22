@@ -16,12 +16,13 @@ const io = new Server(server);
 /**
  * room = {
  *   code, hostId, options,
- *   players: [{ id, name, connected }],   // seating order
+ *   players: [{ id, key, name, connected }],   // seating order; id is public, key is secret
  *   game: null | game state,
  *   touched: timestamp
  * }
- * A player is identified by a random id kept in the browser (localStorage),
- * so a refresh or a locked phone rejoins the same seat.
+ * Every phone sees the other players' ids, so an id alone proves nothing.
+ * Each seat also has a secret key that only its own browser keeps (localStorage);
+ * a refresh or a locked phone rejoins the same seat with id + key.
  */
 const rooms = new Map();
 const socketsOf = new Map(); // playerId -> Set(socket)
@@ -32,6 +33,21 @@ function newCode() {
     if (!rooms.has(code)) return code;
   }
   throw new Error('ما قدرنا ننشئ غرفة، جرّب مرة ثانية');
+}
+
+const newKey = () => crypto.randomBytes(18).toString('base64url');
+const sameKey = (a, b) => typeof a === 'string' && typeof b === 'string' && a.length === b.length &&
+  crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+
+// keep the chosen extra roles valid when the number of players changes
+function fitOptions(room) {
+  const n = Math.min(Math.max(room.players.length, G.MIN_PLAYERS), G.MAX_PLAYERS);
+  if (!room.optionsTouched) { room.options = G.defaultOptions(n); return; }
+  const o = { ...room.options };
+  for (const key of ['shamhoroush', 'alqami', 'farisLulua']) {
+    try { G.buildRoles(n, o); return void (room.options = o); } catch (_) { o[key] = false; }
+  }
+  room.options = o;
 }
 
 const cleanName = n => String(n || '').replace(/\s+/g, ' ').trim().slice(0, 18);
@@ -87,26 +103,28 @@ io.on('connection', socket => {
     return { room, id: socket.data.playerId };
   };
 
-  socket.on('create', ({ name, playerId } = {}, cb) => {
+  socket.on('create', ({ name } = {}, cb) => {
     try {
       name = cleanName(name);
       if (!name) throw new Error('اكتب اسمك');
-      const id = playerId || crypto.randomUUID();
+      const id = crypto.randomUUID();
+      const key = newKey();
       const code = newCode();
-      const room = { code, hostId: id, options: G.defaultOptions(5), players: [{ id, name, connected: true }], game: null, touched: Date.now() };
+      const room = { code, hostId: id, options: G.defaultOptions(5), players: [{ id, key, name, connected: true }], game: null, touched: Date.now() };
       rooms.set(code, room);
       attach(socket, room, id);
-      reply(cb, { ok: true, code, playerId: id });
+      reply(cb, { ok: true, code, playerId: id, key });
       broadcast(room);
     } catch (e) { fail(cb, e); }
   });
 
-  socket.on('join', ({ code, name, playerId } = {}, cb) => {
+  socket.on('join', ({ code, name, playerId, key } = {}, cb) => {
     try {
       const room = rooms.get(String(code || '').trim());
       if (!room) throw new Error('ما لقينا غرفة بهالكود');
-      let id = playerId;
-      const existing = id && room.players.find(p => p.id === id);
+      const seat = playerId && room.players.find(p => p.id === playerId);
+      const existing = seat && sameKey(seat.key, key) ? seat : null;
+      let id = existing ? existing.id : null;
       if (!existing) {
         // a returning phone without its id can't take a seat mid-game
         if (room.game) throw new Error('اللعبة بدأت. انتظر الجولة الجاية');
@@ -114,13 +132,14 @@ io.on('connection', socket => {
         if (!name) throw new Error('اكتب اسمك');
         if (room.players.length >= G.MAX_PLAYERS) throw new Error('الغرفة مليانة');
         if (room.players.some(p => p.name === name)) throw new Error('فيه أحد بنفس الاسم، غيّره شوي');
-        id = id || crypto.randomUUID();
-        room.players.push({ id, name, connected: true });
-        if (room.players.length >= 7 && !room.optionsTouched) room.options = G.defaultOptions(room.players.length);
+        id = crypto.randomUUID();
+        key = newKey();
+        room.players.push({ id, key, name, connected: true });
+        fitOptions(room);
       }
       attach(socket, room, id);
       ensureHost(room);
-      reply(cb, { ok: true, code: room.code, playerId: id });
+      reply(cb, { ok: true, code: room.code, playerId: id, key: existing ? existing.key : key });
       broadcast(room);
     } catch (e) { fail(cb, e); }
   });
@@ -133,7 +152,7 @@ io.on('connection', socket => {
       socket.leave(room.code);
       socket.data.roomCode = null;
       if (!room.players.length) rooms.delete(room.code);
-      else { ensureHost(room); broadcast(room); }
+      else { fitOptions(room); ensureHost(room); broadcast(room); }
       reply(cb, { ok: true });
     } catch (e) { fail(cb, e); }
   });
@@ -179,14 +198,31 @@ io.on('connection', socket => {
   gameAction('quest', (g, id, { sabotage }) => G.playQuest(g, id, sabotage));
   gameAction('assassinate', (g, id, { target }) => G.assassinate(g, id, target));
 
+  // 'again' after the morning reveal; 'abort' lets the host end a game that is stuck
+  // (for example, someone left for good and the vote can never finish)
+  const backToLobby = (room) => {
+    room.game = null;
+    room.players = room.players.filter(p => p.connected);
+    fitOptions(room);
+    ensureHost(room);
+  };
+  socket.on('abort', (_ = {}, cb) => {
+    try {
+      const { room, id } = ctx();
+      if (room.hostId !== id) throw new Error('المضيف بس ينهي اللعبة');
+      if (!room.game) throw new Error('ما فيه لعبة شغالة');
+      backToLobby(room);
+      broadcast(room);
+      reply(cb, { ok: true });
+    } catch (e) { fail(cb, e); }
+  });
+
   socket.on('again', (_ = {}, cb) => {
     try {
       const { room, id } = ctx();
       if (room.hostId !== id) throw new Error('المضيف بس يبدأ جولة جديدة');
       if (room.game && room.game.phase !== 'end') throw new Error('اللعبة لسه ما خلصت');
-      room.game = null;
-      room.players = room.players.filter(p => p.connected);
-      ensureHost(room);
+      backToLobby(room);
       broadcast(room);
       reply(cb, { ok: true });
     } catch (e) { fail(cb, e); }
@@ -209,6 +245,7 @@ io.on('connection', socket => {
         if (still && !still.connected) {
           r.players = r.players.filter(x => x.id !== playerId);
           if (!r.players.length) { rooms.delete(roomCode); return; }
+          fitOptions(r);
           ensureHost(r);
           broadcast(r);
         }

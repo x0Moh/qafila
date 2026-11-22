@@ -116,7 +116,8 @@ function nightInfo(g, id) {
     seen = others.filter(p => teamOf(g, p) === 'raiders' && g.roleOf[p] !== 'SHAMHOROUSH');
     label = 'جماعتك من الغزاة';
   }
-  return { label, seen: shuffle(seen) };
+  // seating order, not shuffled: a shuffle on every update would make the list jump around
+  return { label, seen };
 }
 
 function ackNight(g, id) {

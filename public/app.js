@@ -8,6 +8,8 @@
     set id(v) { localStorage.setItem('qafila.id', v); },
     get room() { return localStorage.getItem('qafila.room'); },
     set room(v) { v ? localStorage.setItem('qafila.room', v) : localStorage.removeItem('qafila.room'); },
+    get key() { return localStorage.getItem('qafila.key'); },
+    set key(v) { localStorage.setItem('qafila.key', v); },
     get name() { return localStorage.getItem('qafila.name') || ''; },
     set name(v) { localStorage.setItem('qafila.name', v); },
   };
@@ -17,7 +19,7 @@
   const socket = io({ transports: ['websocket', 'polling'] });
 
   let state = null;            // { room, game } from the server
-  let ui = { revealed: false, picked: [], peek: false, target: null, busy: false };
+  let ui = { revealed: false, picked: [], peek: false, target: null, confirmAbort: false };
   let lastPhaseKey = '';
 
   // ---------- helpers ----------
@@ -247,6 +249,7 @@
       ${lastEvent(g)}
       ${phasePanel(g)}
       ${historyView(g)}
+      ${state.room.isHost ? `<button class="link" data-act="abort">${ui.confirmAbort ? 'متأكد؟ اضغط مرة ثانية وترجعون للانتظار' : 'إنهاء اللعبة (للمضيف)'}</button>` : ''}
       ${ui.peek ? `<div class="sheet" data-act="peek"><div>${roleCard(g)}<button class="btn" data-act="peek">أخفِ</button></div></div>` : ''}`;
   }
 
@@ -298,8 +301,8 @@
     if (!name) return toast('اكتب اسمك');
     if (!/^\d{4}$/.test(code)) return toast('الكود أربعة أرقام');
     store.name = name;
-    const res = await send('join', { code, name, playerId: store.id });
-    if (res.ok) { store.id = res.playerId; store.room = res.code; history.replaceState(null, '', '/'); }
+    const res = await send('join', { code, name, playerId: store.id, key: store.key });
+    if (res.ok) { store.id = res.playerId; store.key = res.key; store.room = res.code; history.replaceState(null, '', '/'); }
   });
 
   $app.addEventListener('click', async e => {
@@ -322,8 +325,8 @@
         const name = ($app.querySelector('#name')?.value || '').trim();
         if (!name) return toast('اكتب اسمك أول');
         store.name = name;
-        const res = await send('create', { name, playerId: store.id });
-        if (res.ok) { store.id = res.playerId; store.room = res.code; }
+        const res = await send('create', { name });
+        if (res.ok) { store.id = res.playerId; store.key = res.key; store.room = res.code; }
         break;
       }
       case 'share': {
@@ -345,6 +348,10 @@
       case 'propose': send('propose', { team: ui.picked }); break;
       case 'assassinate': if (ui.target) send('assassinate', { target: ui.target }); break;
       case 'again': send('again'); break;
+      case 'abort':
+        if (!ui.confirmAbort) { ui.confirmAbort = true; render(); setTimeout(() => { ui.confirmAbort = false; render(); }, 4000); }
+        else { ui.confirmAbort = false; send('abort'); }
+        break;
       case 'peek':
         if (e.target.closest('.sheet > div') && !e.target.closest('button')) return;
         ui.peek = !ui.peek; render(); break;
@@ -362,8 +369,9 @@
   socket.on('state', onState);
   socket.on('connect', async () => {
     if (store.room && store.id) {
-      const res = await new Promise(r => socket.emit('join', { code: store.room, playerId: store.id }, r));
-      if (!res || !res.ok) { store.room = null; state = null; render(); }
+      const res = await new Promise(r => socket.emit('join', { code: store.room, playerId: store.id, key: store.key, name: store.name }, r));
+      if (res && res.ok) { store.id = res.playerId; store.key = res.key; }
+      else { store.room = null; state = null; render(); }
     }
   });
   socket.on('disconnect', () => toast('انقطع الاتصال… نحاول نرجع'));
