@@ -1,0 +1,156 @@
+/* قافلة — هوية «حبر وخط» */
+:root {
+  --paper: #F4ECDD;
+  --card: #FBF6EC;
+  --ink: #1A1613;
+  --ink-soft: #5A4E42;
+  --line: #D9CCB6;
+  --caravan: #3F5E7A;
+  --caravan-soft: #DCE6EE;
+  --raiders: #B3261E;
+  --raiders-soft: #F3D9D5;
+  --gold: #B8892E;
+  --radius: 16px;
+  --display: 'Aref Ruqaa', 'Amiri', serif;
+  --ui: 'Readex Pro', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--ui); }
+body { min-height: 100dvh; -webkit-tap-highlight-color: transparent; }
+#app { max-width: 480px; margin: 0 auto; padding: 20px 18px calc(28px + env(safe-area-inset-bottom)); min-height: 100dvh; display: flex; flex-direction: column; gap: 18px; }
+
+h1, h2, h3, p { margin: 0; }
+.display { font-family: var(--display); font-weight: 700; line-height: 1.25; }
+.muted { color: var(--ink-soft); }
+.small { font-size: 13px; }
+.center { text-align: center; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; flex-direction: row; gap: 10px; align-items: center; }
+.spread { justify-content: space-between; }
+.grow { flex: 1; }
+
+/* logo */
+.logo { position: relative; display: inline-flex; flex-direction: column; align-items: center; }
+.logo .word { font-family: var(--display); font-weight: 700; font-size: 88px; line-height: 1.15; }
+.logo .seal { position: absolute; top: 6px; left: -38px; width: 44px; height: 44px; border-radius: 6px; background: var(--raiders); color: var(--paper); transform: rotate(-8deg); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; font-size: 30px; }
+.logo .latin { font-size: 13px; font-weight: 600; letter-spacing: 8px; color: var(--ink-soft); }
+.logo.small .word { font-size: 34px; }
+.logo.small .seal { width: 22px; height: 22px; font-size: 15px; top: 2px; left: -20px; border-radius: 4px; }
+.logo.small .latin { display: none; }
+.stroke { display: block; margin: 0 auto; }
+
+/* cards & fields */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: 0 4px 14px #1a161310; }
+label { font-size: 14px; font-weight: 600; }
+input[type=text], input[type=tel] {
+  width: 100%; height: 54px; border-radius: 14px; border: 1.5px solid var(--line); background: #fff;
+  font: inherit; font-size: 18px; padding: 0 14px; color: var(--ink);
+}
+input:focus-visible, button:focus-visible { outline: 3px solid var(--caravan); outline-offset: 2px; }
+input.code { text-align: center; letter-spacing: 12px; font-size: 28px; font-weight: 700; direction: ltr; }
+
+button { font: inherit; cursor: pointer; border: 0; }
+.btn { min-height: 54px; border-radius: 14px; padding: 0 18px; font-size: 18px; font-weight: 700; background: var(--ink); color: var(--paper); width: 100%; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); }
+.btn.red { background: var(--raiders); color: #fff; }
+.btn.blue { background: var(--caravan); color: #fff; }
+.btn:disabled { opacity: .45; cursor: default; }
+.link { background: none; color: var(--ink-soft); text-decoration: underline; font-size: 14px; padding: 8px; }
+
+/* lobby */
+.roomcode { font-size: 52px; font-weight: 700; letter-spacing: 10px; direction: ltr; text-align: center; line-height: 1.1; }
+.players { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.players li { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 46px; }
+.players li.off { opacity: .45; }
+.tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--ink); color: var(--paper); white-space: nowrap; }
+.tag.blue { background: var(--caravan); }
+.tag.red { background: var(--raiders); }
+.toggle { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.toggle:first-of-type { border-top: 0; }
+.toggle input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--ink); flex-shrink: 0; }
+.toggle .t { font-weight: 700; }
+.toggle .d { font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+.toggle.disabled { opacity: .45; }
+
+/* role card */
+.role { border-radius: 20px; padding: 22px 18px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; min-height: 380px; justify-content: center; }
+.role.caravan { background: var(--card); border: 2px solid var(--caravan); }
+.role.raiders { background: var(--ink); color: var(--paper); border: 2px solid var(--raiders); }
+.role .name { font-family: var(--display); font-weight: 700; font-size: 72px; line-height: 1.2; }
+.role.raiders .name { color: #E0473C; }
+.role .team { font-size: 14px; font-weight: 700; }
+.role.caravan .team { color: var(--caravan); }
+.role.raiders .team { color: #F08C80; }
+.role .blurb { font-size: 15px; line-height: 1.8; }
+.role.raiders .blurb { color: #E7DCCB; }
+.seen { width: 100%; border-radius: 14px; padding: 12px; background: #00000010; display: flex; flex-direction: column; gap: 8px; }
+.role.raiders .seen { background: #ffffff14; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.chip { padding: 6px 14px; border-radius: 999px; font-weight: 700; border: 1.5px solid currentColor; }
+.cover { border-radius: 20px; min-height: 380px; background: var(--ink); color: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 20px; }
+.cover .display { font-size: 40px; }
+
+/* route board */
+.route { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); position: relative; }
+.route::before { content: ''; position: absolute; top: 22px; right: 10%; left: 10%; border-top: 2px dashed var(--ink-soft); }
+.stop { display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
+.dot { width: 44px; height: 44px; border-radius: 50%; background: var(--paper); border: 2px solid var(--ink-soft); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
+.dot.now { border: 3px solid var(--ink); background: #fff; }
+.dot.win { background: var(--caravan); border-color: var(--caravan); color: #fff; }
+.dot.lose { background: var(--raiders); border-color: var(--raiders); color: #fff; }
+.stop .s { font-size: 12px; font-weight: 600; }
+.stop .n { font-size: 11px; color: var(--ink-soft); }
+.rejects { display: flex; gap: 6px; align-items: center; justify-content: center; font-size: 12px; color: var(--ink-soft); }
+.rejects i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--ink-soft); display: inline-block; }
+.rejects i.on { background: var(--raiders); border-color: var(--raiders); }
+
+/* selection & voting */
+.pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.pick button { min-height: 52px; border-radius: 12px; background: #fff; border: 1.5px solid var(--line); font-size: 16px; font-weight: 600; color: var(--ink); padding: 6px 10px; }
+.pick button[aria-pressed=true] { border: 2.5px solid var(--ink); background: var(--ink); color: var(--paper); }
+.team-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.team-list span { background: #fff; border: 1.5px solid var(--ink); border-radius: 999px; padding: 6px 14px; font-weight: 700; }
+.vote { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.vote button { min-height: 110px; border-radius: 18px; font-size: 22px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.vote .yes { background: var(--caravan-soft); color: var(--caravan); border: 2px solid var(--caravan); }
+.vote .no { background: var(--raiders-soft); color: var(--raiders); border: 2px solid var(--raiders); }
+.quest { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.quest button { min-height: 180px; border-radius: 18px; background: var(--card); border: 2px solid var(--ink); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 10px; }
+.quest .q { font-family: var(--display); font-size: 30px; font-weight: 700; }
+.quest .qs { font-size: 13px; color: var(--ink-soft); }
+.progress { display: flex; gap: 6px; justify-content: center; }
+.progress i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink-soft); }
+.progress i.on { background: var(--ink); border-color: var(--ink); }
+
+/* banners, history */
+.banner { border-radius: 14px; padding: 12px 14px; font-weight: 600; line-height: 1.7; }
+.banner.ok { background: var(--caravan-soft); color: var(--caravan); }
+.banner.bad { background: var(--raiders-soft); color: var(--raiders); }
+.banner.info { background: #fff; border: 1px solid var(--line); }
+details.history { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 4px 14px; }
+details.history summary { cursor: pointer; font-weight: 700; padding: 10px 0; }
+.hist-item { border-top: 1px solid var(--line); padding: 10px 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.votes { display: flex; flex-wrap: wrap; gap: 6px; }
+.votes span { font-size: 12px; padding: 2px 8px; border-radius: 999px; }
+.votes .y { background: var(--caravan-soft); color: var(--caravan); }
+.votes .n { background: var(--raiders-soft); color: var(--raiders); }
+
+/* end */
+.winner { border-radius: 20px; padding: 24px 16px; text-align: center; display: flex; flex-direction: column; gap: 6px; }
+.winner.caravan { background: var(--caravan); color: #fff; }
+.winner.raiders { background: var(--raiders); color: #fff; }
+.winner .display { font-size: 46px; }
+.reveal { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.reveal li { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font-weight: 600; }
+.reveal li .r { font-family: var(--display); font-size: 22px; }
+.reveal li.caravan .r { color: var(--caravan); }
+.reveal li.raiders .r { color: var(--raiders); }
+
+.topbar { display: flex; justify-content: space-between; align-items: center; }
+.peek { background: var(--ink); color: var(--paper); border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 700; min-height: 40px; }
+
+#toast { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 12px 18px; border-radius: 12px; font-weight: 600; max-width: 90vw; z-index: 10; }
+
+.sheet { position: fixed; inset: 0; background: #1a1613cc; display: flex; align-items: flex-end; justify-content: center; z-index: 5; }
+.sheet > div { width: 100%; max-width: 480px; padding: 16px 18px calc(24px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; }
