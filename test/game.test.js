@@ -81,7 +81,7 @@ test('caravan players cannot sabotage even if they tap it', () => {
   assert.equal(g.results[0].fails, 0);
 });
 
-test('the fourth station needs two sabotages with seven or more players', () => {
+test('one sabotage fails any station, even the fourth with seven players', () => {
   const g = startGame(7);
   const caravan = byTeam(g, 'caravan');
   const raiders = byTeam(g, 'raiders');
@@ -90,11 +90,25 @@ test('the fourth station needs two sabotages with seven or more players', () => 
   approveTeam(g, caravan.slice(0, 3)); g.team.forEach(p => G.playQuest(g, p, false));
   approveTeam(g, [raiders[0], ...caravan.slice(0, 2)]); g.team.forEach(p => G.playQuest(g, p, true));
   assert.equal(g.results[2].success, false);
-  // station 4: one sabotage is not enough
+  // station 4: a single sabotage is enough
   approveTeam(g, [raiders[0], ...caravan.slice(0, 3)]); g.team.forEach(p => G.playQuest(g, p, true));
   assert.equal(g.results[3].fails, 1);
-  assert.equal(g.results[3].success, true);
-  assert.equal(g.phase, 'assassin');
+  assert.equal(g.results[3].success, false);
+  assert.equal(g.phase, 'team');
+});
+
+test('votes stay secret: players only ever see the totals', () => {
+  const g = startGame(6);
+  G.proposeTeam(g, G.leaderId(g), g.order.slice(0, 2));
+  g.order.forEach((p, i) => G.vote(g, p, i < 4));
+  assert.equal(g.history.length, 1);
+  const v = G.viewFor(g, g.order[0]);
+  for (const h of v.history) {
+    assert.equal(h.votes, undefined);
+    assert.equal(typeof h.yes, 'number');
+    assert.equal(typeof h.no, 'number');
+  }
+  assert.ok(!JSON.stringify(v).includes('"votes"'));
 });
 
 test('three successes go to Wahshi; finding Ahnaf wins it for the raiders', () => {

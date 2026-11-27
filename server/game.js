@@ -32,8 +32,9 @@ const MIN_PLAYERS = 5;
 const MAX_PLAYERS = 10;
 const MAX_REJECTS = 5;
 
-function failsNeeded(playerCount, questIndex) {
-  return questIndex === 3 && playerCount >= 7 ? 2 : 1;
+// House rule (قافلة): a single sabotage fails any station, at every player count.
+function failsNeeded(playerCount, questIndex) { // eslint-disable-line no-unused-vars
+  return 1;
 }
 
 function defaultOptions(count) {
@@ -96,7 +97,7 @@ function newGame(players, options, rng = Math.random) {
   };
 }
 
-const teamOf = (g, id) => ROLES[g.roleOf[id]].team;
+const teamOf = (g, id) => (g.roleOf[id] ? ROLES[g.roleOf[id]].team : null);
 const leaderId = g => g.order[g.leaderIndex];
 const questSize = g => QUEST_SIZES[g.order.length][g.questIndex];
 
@@ -218,12 +219,16 @@ function viewFor(g, id) {
     maxRejects: MAX_REJECTS,
     team: g.team,
     votedCount: Object.keys(g.votes).length,
+    votedIds: Object.keys(g.votes),   // who has voted, never how
     myVote: g.votes[id],
     playedCount: Object.keys(g.questPlays).length,
     iPlayed: id in g.questPlays,
     results: g.results.map(r => ({ success: r.success, fails: r.fails, team: r.team })),
-    // a proposal only enters history once every vote is in, so nothing leaks mid-vote
-    history: g.history.map(h => ({ ...h, votes: { ...h.votes } })),
+    // House rule (قافلة): votes are secret. Only the totals are ever shown, never who voted what.
+    history: g.history.map(h => {
+      const yes = Object.values(h.votes).filter(Boolean).length;
+      return { quest: h.quest, leader: h.leader, team: h.team.slice(), approved: h.approved, yes, no: Object.keys(h.votes).length - yes };
+    }),
     isWahshi: me === 'WAHSHI',
     winner: g.winner,
     reason: g.reason,

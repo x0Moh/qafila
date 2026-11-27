@@ -65,8 +65,20 @@ function lobbyView(room, id) {
   };
 }
 
+// the big screen in the middle of the majlis: it sees only what everyone sees
+function screenView(room) {
+  return {
+    room: { ...lobbyView(room, null), screen: true },
+    game: room.game ? G.viewFor(room.game, null) : null,
+  };
+}
+
 function broadcast(room) {
   room.touched = Date.now();
+  if (room.screens && room.screens.size) {
+    const view = screenView(room);
+    for (const s of room.screens) s.emit('state', view);
+  }
   for (const p of room.players) {
     const view = {
       room: lobbyView(room, p.id),
@@ -141,6 +153,20 @@ io.on('connection', socket => {
       ensureHost(room);
       reply(cb, { ok: true, code: room.code, playerId: id, key: existing ? existing.key : key });
       broadcast(room);
+    } catch (e) { fail(cb, e); }
+  });
+
+  // a laptop or TV joins as a screen: no seat, no role, public view only
+  socket.on('watch', ({ code } = {}, cb) => {
+    try {
+      const room = rooms.get(String(code || '').trim());
+      if (!room) throw new Error('ما لقينا غرفة بهالكود');
+      if (!room.screens) room.screens = new Set();
+      if (room.screens.size >= 4) throw new Error('فيه شاشات كثير على هالغرفة');
+      room.screens.add(socket);
+      socket.data.screenOf = room.code;
+      reply(cb, { ok: true, code: room.code });
+      socket.emit('state', screenView(room));
     } catch (e) { fail(cb, e); }
   });
 
@@ -229,7 +255,8 @@ io.on('connection', socket => {
   });
 
   socket.on('disconnect', () => {
-    const { roomCode, playerId } = socket.data;
+    const { roomCode, playerId, screenOf } = socket.data;
+    if (screenOf) { const r = rooms.get(screenOf); if (r && r.screens) r.screens.delete(socket); return; }
     const set = socketsOf.get(playerId);
     if (set) { set.delete(socket); if (!set.size) socketsOf.delete(playerId); }
     const room = rooms.get(roomCode);

@@ -63,3 +63,32 @@ test('a player who reconnects with their key gets their seat back', async () => 
     await new Promise(r => server.close(r));
   }
 });
+
+test('the big screen sees the board but no roles and no single vote', async () => {
+  await new Promise(r => server.listen(0, r));
+  const url = `http://localhost:${server.address().port}`;
+  const socks = [];
+  try {
+    const open = async () => { const s = connect(url, { transports: ['websocket'], forceNew: true }); await new Promise(r => s.on('connect', r)); socks.push(s); return s; };
+    const host = await open();
+    const made = await call(host, 'create', { name: 'مشاري' });
+    for (let i = 1; i < 5; i++) await call(await open(), 'join', { code: made.code, name: 'لاعب ' + i });
+    const tv = await open();
+    let last = null;
+    tv.on('state', st => { last = st; });
+    const res = await call(tv, 'watch', { code: made.code });
+    assert.equal(res.ok, true);
+    await call(host, 'start');
+    await wait(80);
+    assert.equal(last.room.screen, true);
+    assert.equal(last.game.phase, 'night');
+    assert.equal(last.game.myRole, null);
+    assert.equal(last.game.night, null);
+    assert.equal(last.game.reveal, null);
+    assert.equal(last.room.players.length, 5, 'a screen takes no seat');
+    assert.ok(!JSON.stringify(last).includes('"key"'));
+  } finally {
+    socks.forEach(s => s.close());
+    await new Promise(r => server.close(r));
+  }
+});
